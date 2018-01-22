@@ -1,0 +1,1 @@
+### YOLO> reference>* [图解YOLO](https://zhuanlan.zhihu.com/p/24916786)>* [论文阅读笔记](http://blog.csdn.net/tangwei2014/article/details/50915317)>* [YOLO详解](https://zhuanlan.zhihu.com/p/25236464)## Abstract* 目标检测方法* 
