@@ -70,7 +70,13 @@ class Runner():
 
         with tf.Session() as sess:
             sess.run(tf.global_variables_initializer())
-            saver1.restore(sess, self.pretrain_path)
+            ckpt = tf.train.get_checkpoint_state(self.train_dir)
+            if ckpt and ckpt.model_checkpoint_path:
+                print("load trained model")
+                saver2.restore(sess, ckpt.model_checkpoint_path)
+            else:
+                print("load pretrained model")
+                saver1.restore(sess, self.pretrain_path)
 
             summary_writer = tf.summary.FileWriter(self.train_dir, sess.graph)
 
@@ -86,7 +92,7 @@ class Runner():
 
                 assert not np.isnan(loss_value), 'Model diverged with loss = NaN'
 
-                if step % 10 == 0:
+                if step % 1000 == 0:
                     num_examples_per_step = self.dataset.batch_size
                     examples_per_sec = num_examples_per_step / duration
                     sec_per_batch = float(duration)
@@ -99,7 +105,7 @@ class Runner():
                     summary_str = sess.run(summary_op, feed_dict={self.images: np_images, self.labels: np_labels,
                                                                   self.objects_num: np_objects_num})
                     summary_writer.add_summary(summary_str, step)
-                if step % 5000 == 0:
+                if step % 10000 == 0:
                     saver2.save(sess, '{}/{}.ckpt'.format(self.train_dir, self.model_name), global_step=step)
 
     @staticmethod
@@ -169,7 +175,9 @@ class Runner():
             saver = tf.train.Saver(net.trainable_collection)
 
             with tf.Session() as sess:
-                saver.restore(sess, '{}/{}.ckpt'.format(solver_params['train_dir'], solver_params['model_name']))
+                ckpt = tf.train.get_checkpoint_state(solver_params['train_dir'])
+                if ckpt and ckpt.model_checkpoint_path:
+                    saver.restore(sess, ckpt.model_checkpoint_path)
 
                 np_predict = sess.run(predicts, feed_dict={image: np_img})
 
@@ -177,7 +185,7 @@ class Runner():
                 class_name = classes_name[class_num]
                 cv2.rectangle(resized_img, (int(xmin), int(ymin)), (int(xmax), int(ymax)), (0, 0, 255))
                 cv2.putText(resized_img, class_name, (int(xmin), int(ymin)), 2, 1.5, (0, 0, 255))
-                cv2.imwrite('{}/{}'.format(predict_params['output_dir'], os.path.split('/')[-1]), resized_img)
+                cv2.imwrite('{}/{}'.format(predict_params['output_dir'], os.path.split(test_file)[-1]), resized_img)
 
         pass
 
@@ -204,6 +212,6 @@ if __name__ == '__main__':
     runner = Runner(conf_file=conf_file)
     runner.run()
 
-    # Runner.predict(['../data/1.jpg'], conf_file)
+    # Runner.predict(['../data/cat.jpg'], conf_file)
 
     pass
